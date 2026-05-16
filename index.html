@@ -1,0 +1,828 @@
+<!DOCTYPE html>   
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1B2B4B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Igreja da Graça">
+  <title>Igreja da Graça · App Oficial</title>
+    <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', serif; background: #F7F5F0; color: #1B2B4B; }
+    
+    /* Splash */
+    #splash {
+      position: fixed; inset: 0; background: #1B2B4B; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.6s;
+    }
+    .splash-icon { width: 90px; height: 90px; border-radius: 22px; background: #B8972A; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; }
+    .splash-cross { font-size: 50px; color: #1B2B4B; }
+    .splash-text { font-size: 20px; font-weight: bold; color: white; text-align: center; margin-bottom: 8px; }
+    .splash-sub { font-size: 11px; color: #E8D48A; text-transform: uppercase; margin-bottom: 40px; }
+    .splash-verse { font-style: italic; font-size: 12px; color: #EBF2FB; opacity: 0.6; text-align: center; padding: 0 30px; }
+    
+    /* Header */
+    .header { background: #1B2B4B; border-bottom: 3px solid #B8972A; cursor: pointer; }
+    .header-inner { padding: 16px; display: flex; align-items: center; gap: 12px; }
+    .app-icon { width: 44px; height: 44px; background: #B8972A; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+    .app-icon span { font-size: 24px; color: #1B2B4B; }
+    .church-name { color: white; font-weight: bold; font-size: 16px; }
+    .church-sub { color: #E8D48A; font-size: 9px; text-transform: uppercase; margin-top: 2px; }
+    .header-verse { background: rgba(0,0,0,0.2); padding: 8px 16px; font-size: 11px; color: #EBF2FB; font-style: italic; }
+    
+    /* Navegação */
+    .nav { background: #253A61; display: flex; overflow-x: auto; border-bottom: 1px solid rgba(184,151,42,0.3); }
+    .nav-btn { flex: none; background: none; border: none; color: #D6E4F7; padding: 12px 14px; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; opacity: 0.6; border-bottom: 2px solid transparent; }
+    .nav-btn.active { opacity: 1; border-bottom-color: #B8972A; color: #E8D48A; }
+    
+    /* Conteúdo */
+    .content { padding: 18px 15px 80px; max-width: 600px; margin: 0 auto; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .sec-title { font-size: 22px; font-weight: bold; }
+    .sec-sub { font-size: 10px; color: #5A6B8A; text-transform: uppercase; margin-bottom: 5px; }
+    .divider { width: 35px; height: 2px; background: #B8972A; margin-bottom: 15px; }
+    
+    /* Cards */
+    .card { background: white; border-radius: 8px; border: 1px solid #D0D8E8; padding: 15px; margin-bottom: 12px; border-top: 3px solid #2E4F8A; }
+    .card-title { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+    .card-text { font-size: 13px; line-height: 1.6; color: #1B2B4B; opacity: 0.85; }
+    .culto-card { background: white; border-radius: 8px; border: 1px solid #D0D8E8; margin-bottom: 12px; overflow: hidden; }
+    .culto-day { background: #1B2B4B; color: white; padding: 10px 15px; border-bottom: 2px solid #B8972A; font-weight: bold; }
+    .culto-item { display: flex; gap: 12px; padding: 10px 15px; border-bottom: 1px solid #EDE8DC; }
+    .culto-time { font-weight: bold; color: #2E4F8A; min-width: 55px; font-size: 12px; }
+    .culto-title { font-weight: bold; font-size: 13px; }
+    .culto-preletor { font-size: 11px; color: #5A6B8A; margin-top: 2px; }
+    .btn-confirmar { background: #2D6B3A; color: white; border: none; border-radius: 4px; padding: 4px 12px; font-size: 10px; cursor: pointer; margin-top: 5px; }
+    
+    /* Botões */
+    .btn-whatsapp { background: #25D366; color: white; border: none; border-radius: 5px; padding: 8px 15px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .pix-card { background: white; border: 1px solid #D0D8E8; border-radius: 8px; padding: 15px; border-top: 3px solid #2D6B3A; }
+    .pix-key { background: #EAF3DC; border: 1px solid #B5D990; border-radius: 5px; padding: 10px; display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .btn-copy { background: #2D6B3A; color: white; border: none; border-radius: 4px; padding: 5px 12px; cursor: pointer; }
+    .oracao-form { background: white; border: 1px solid #D0D8E8; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .form-input, .form-textarea { width: 100%; background: #F7F5F0; border: 1px solid #D0D8E8; border-radius: 5px; padding: 8px; margin-bottom: 10px; }
+    .form-textarea { height: 80px; }
+    .btn-send { width: 100%; background: #1B2B4B; color: #E8D48A; border: none; border-radius: 5px; padding: 12px; font-weight: bold; cursor: pointer; }
+    .oracao-item { background: white; border: 1px solid #D0D8E8; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+    .oracao-nome { font-size: 12px; font-weight: bold; }
+    .oracao-texto { font-size: 13px; margin-top: 5px; line-height: 1.5; }
+    .btn-amem { background: #EBF2FB; border: 1px solid #D6E4F7; border-radius: 4px; padding: 3px 10px; font-size: 10px; cursor: pointer; margin-top: 8px; }
+    
+    .config-btn { position: fixed; bottom: 20px; right: 15px; width: 46px; height: 46px; border-radius: 50%; background: #1B2B4B; border: 2px solid #B8972A; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: #E8D48A; }
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1B2B4B; color: #E8D48A; padding: 10px 20px; border-radius: 6px; font-size: 12px; opacity: 0; transition: 0.3s; z-index: 9999; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-icon"><div class="splash-cross">✝</div></div>
+  <div class="splash-text">Igreja Comunidade da Graça</div>
+  <div class="splash-sub">Conectando vidas · Servindo ao Senhor</div>
+  <div class="splash-verse">"O Senhor é o meu pastor; nada me faltará." — Sl 23:1</div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="header" id="adminTrigger">
+    <div class="header-inner">
+      <div class="app-icon"><span>✝</span></div>
+      <div><div class="church-name">Igreja Comunidade da Graça</div><div class="church-sub">Conectando vidas · Servindo ao Senhor</div></div>
+    </div>
+    <div class="header-verse">"Onde dois ou três estiverem reunidos em meu nome, ali estou." — Mt 18:20</div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" data-section="agenda">📅 Agenda</button>
+    <button class="nav-btn" data-section="devocional">📖 Devocional</button>
+    <button class="nav-btn" data-section="celulas">👥 Células</button>
+    <button class="nav-btn" data-section="dizimos">💰 Dízimos</button>
+    <button class="nav-btn" data-section="avisos">📢 Avisos</button>
+    <button class="nav-btn" data-section="oracao">🙏 Oração</button>
+        <button class="nav-btn" data-section="mapa">📍 Mapa</button>
+  </nav>
+
+  <div class="content">
+      <div class="section active" id="agenda">
+      <div class="sec-title">Agenda de Cultos</div>
+      <div class="sec-sub" id="mesAtual"></div>
+      <div class="divider"></div>
+      <div id="cultos-container"></div>
+    </div>
+
+   <div class="section" id="devocional">
+  <div class="sec-title">Devocional do Dia</div><div class="sec-sub">Reflexão</div><div class="divider"></div>
+  <div class="card"><div class="card-title" id="devTitulo">Carregando...</div><div class="card-text" id="devVersiculo">Carregando...</div></div>
+  <div class="card"><div class="card-title">Reflexão</div><div class="card-text" id="devReflexao">Carregando...</div></div>
+</div>
+
+      <div class="section" id="celulas">
+      <div class="sec-title">Células</div>
+      <div class="sec-sub">Pequenos grupos</div>
+      <div class="divider"></div>
+      <div id="celulas-container"></div>
+    </div>
+
+        <div class="section" id="dizimos">
+      <div class="sec-title">Dízimos</div><div class="sec-sub">Contribua</div><div class="divider"></div>
+      <div class="pix-card"><div class="pix-key" id="pix-key"><span style="font-weight:bold;" id="pix-value">comunidadegraca@igreja.org.br</span><button class="btn-copy" onclick="copiarPix()">Copiar</button></div><div class="card-text">Após o PIX, guarde o comprovante. Deus abençoe!</div></div>
+    </div>
+
+    <div class="section" id="avisos">
+      <div class="sec-title">Avisos</div><div class="sec-sub">Comunicados</div><div class="divider"></div>
+      <div class="card" style="border-left:4px solid #B8972A;"><div class="card-title">⚠️ Culto do Dia das Mães</div><div class="card-text">10 de Maio - Culto especial com homenagens e jantar comunitário.</div></div>
+      <div class="card"><div class="card-title">📦 Arrecadação de Agasalhos</div><div class="card-text">Até 25 de Maio. Doe agasalhos na entrada da igreja.</div></div>
+    </div>
+
+    <div class="section" id="oracao">
+  <div class="sec-title">Pedidos de Oração</div>
+  <div class="sec-sub">Compartilhe e interceda</div>
+  <div class="divider"></div>
+  
+  <!-- Área para NOVO PEDIDO -->
+  <div class="oracao-form">
+    <input type="text" id="nomeOracao" class="form-input" placeholder="Seu nome">
+    <textarea id="textoOracao" class="form-textarea" placeholder="Escreva seu pedido de oração..."></textarea>
+    <button class="btn-send" onclick="enviarOracaoComunitaria()">✝ Enviar Pedido</button>
+  </div>
+  
+  <!-- Lista de pedidos (todos veem) -->
+  <div id="listaOracoes"></div>
+</div>
+        <div class="section" id="mapa">
+      <div class="sec-title">Localização</div>
+      <div class="sec-sub">Como chegar</div>
+      <div class="divider"></div>
+      <div class="card">
+        <div class="card-title">📍 Endereço</div>
+        <div class="card-text" id="endereco-igreja">Rua das Flores, 456, Brasília-DF</div>
+        <button class="btn-whatsapp" style="margin-top:10px;" onclick="window.open('https://www.google.com/maps','_blank')">🗺 Abrir no Google Maps</button>
+      </div>
+    </div>
+
+<button class="config-btn" onclick="mostrarAdmin()">⚙️</button>
+<div class="toast" id="toast">✅ Copiado!</div>
+
+<script>
+    // ========== CONFIGURAÇÃO DO FIREBASE ==========
+  const firebaseConfig = {
+    apiKey: "AIzaSyCqJEvEiME1KIcikB74lVgoKxYlznZHrqk",
+    authDomain: "igreja-app-comunidade.firebaseapp.com",
+    projectId: "igreja-app-comunidade",
+    storageBucket: "igreja-app-comunidade.firebasestorage.app",
+    messagingSenderId: "566379531711",
+    appId: "1:566379531711:web:d2055d6bed512168f7a50a"
+  };
+  
+  // Inicializar Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+    // ========== CARREGAR DADOS DO FIREBASE ==========
+  
+    // Carregar configurações da igreja
+  async function carregarConfigIgreja() {
+    console.log("Carregando configurações da igreja...");
+    const docRef = db.collection('config_igreja').doc('dados');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      console.log("Dados carregados:", data);
+      
+      // Atualizar nome da igreja (verificar se os elementos existem)
+      const nomeElemento = document.querySelector('.church-name');
+      if (nomeElemento) nomeElemento.innerHTML = data.nome;
+      
+      const nomeSplash = document.querySelector('.splash-text');
+      if (nomeSplash) nomeSplash.innerHTML = data.nome;
+      
+      // Atualizar slogan
+      const sloganElemento = document.querySelector('.church-sub');
+      if (sloganElemento) sloganElemento.innerHTML = data.slogan;
+      
+      const sloganSplash = document.querySelector('.splash-sub');
+      if (sloganSplash) sloganSplash.innerHTML = data.slogan;
+      
+      // Atualizar endereço
+      const enderecoElemento = document.getElementById('endereco-igreja');
+      if (enderecoElemento) enderecoElemento.innerHTML = data.endereco;
+      
+      // Atualizar PIX
+      const pixElemento = document.getElementById('pix-key');
+      if (pixElemento) pixElemento.innerHTML = data.pix;
+      
+      // Salvar no localStorage
+      localStorage.setItem('igreja_nome', data.nome);
+      localStorage.setItem('igreja_slogan', data.slogan);
+      localStorage.setItem('igreja_endereco', data.endereco);
+      localStorage.setItem('igreja_pix', data.pix);
+    } else {
+      console.log("Documento não encontrado no Firebase. Criando dados padrão...");
+      // Criar documento padrão se não existir
+      await db.collection('config_igreja').doc('dados').set({
+        nome: "Igreja Comunidade da Graça",
+        slogan: "Conectando vidas · Servindo ao Senhor",
+        endereco: "Rua das Flores, 456, Brasília-DF",
+        pix: "comunidadegraca@igreja.org.br"
+      });
+    }
+  }
+  // Carregar cultos
+  async function carregarCultos() {
+    const docRef = db.collection('cultos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const cultos = JSON.parse(data.cultos);
+      const container = document.getElementById('cultos-container');
+      if (!container) return;
+      
+      container.innerHTML = cultos.map(culto => `
+        <div class="culto-card">
+          <div class="culto-day">
+            <div class="culto-day-name">${culto.dia}</div>
+            <div class="culto-day-date">${culto.especial}</div>
+          </div>
+          <div class="culto-body">
+            ${culto.horarios.map(h => `
+              <div class="culto-item">
+                <div class="culto-time">${h.hora}</div>
+                <div style="flex:1">
+                  <div class="culto-title">${h.titulo}</div>
+                  <div class="culto-preletor">${h.preletor}</div>
+                  <button class="btn-confirmar" onclick="showToast('Presença confirmada! 🙏')">✓ Vou Comparecer</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+  
+  // Carregar células
+  async function carregarCelulas() {
+    const docRef = db.collection('celulas').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const celulas = JSON.parse(data.celulas);
+      const container = document.getElementById('celulas-container');
+      if (!container) return;
+      
+      container.innerHTML = celulas.map(celula => `
+        <div class="card">
+          <div class="card-title">${celula.nome}</div>
+          <div class="card-text"><strong>Líder:</strong> ${celula.lider}<br>📅 ${celula.dia}<br>📍 ${celula.endereco}</div>
+          <button class="btn-whatsapp" style="margin-top:10px;" onclick="window.open('https://wa.me/${celula.whatsapp}?text=Gostaria%20de%20participar%20da%20c%C3%A9lula','_blank')">💬 Participar via WhatsApp</button>
+        </div>
+      `).join('');
+    }
+  }
+  
+  // Carregar avisos
+  async function carregarAvisos() {
+    const docRef = db.collection('avisos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const avisos = JSON.parse(data.avisos);
+      const container = document.getElementById('avisos-container');
+      if (!container) return;
+      
+      container.innerHTML = avisos.map(aviso => `
+        <div class="card" style="${aviso.urgente ? 'border-left:4px solid #B8972A;' : ''}">
+          <div class="card-title">${aviso.urgente ? '⚠️ ' : '📢 '}${aviso.titulo}</div>
+          <div class="card-text">${aviso.texto}</div>
+        </div>
+      `).join('');
+    }
+  }
+  
+  // Carregar devocional
+  async function carregarDevocional() {
+    const docRef = db.collection('devocional').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const versiculos = JSON.parse(data.versiculos);
+      
+      const diaDoAno = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      const indice = diaDoAno % versiculos.length;
+      const devHoje = versiculos[indice];
+      
+      document.getElementById('devTitulo').innerHTML = devHoje.titulo;
+      document.getElementById('devVersiculo').innerHTML = `"${devHoje.versiculo}"`;
+      document.getElementById('devReflexao').innerHTML = devHoje.reflexao;
+    }
+  }
+    // ========== FIREBASE - ORAÇÕES EM TEMPO REAL ==========
+  
+  // Carregar pedidos do Firebase em tempo real
+  function carregarOracoesFirebase() {
+    db.collection('oracoes').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
+      const oracoes = [];
+      snapshot.forEach((doc) => {
+        oracoes.push({ id: doc.id, ...doc.data() });
+      });
+      renderizarOracoesFirebase(oracoes);
+    });
+  }
+  
+  // Renderizar lista de pedidos
+  function renderizarOracoesFirebase(oracoes) {
+    const container = document.getElementById('listaOracoes');
+    if (!container) return;
+    
+    if (oracoes.length === 0) {
+      container.innerHTML = '<div class="card"><div class="card-text" style="text-align:center;">🙏 Nenhum pedido de oração ainda. Seja o primeiro a compartilhar!</div></div>';
+      return;
+    }
+    
+    container.innerHTML = oracoes.map(o => `
+      <div class="oracao-item">
+        <div class="oracao-nome">${o.nome}</div>
+        <div class="oracao-texto">${o.texto}</div>
+        <div class="oracao-data" style="font-size: 10px; color: #888; margin-top: 5px;">${o.data || ''}</div>
+        <button class="btn-amem" onclick="darAmemFirebase('${o.id}', ${o.amens || 0})">🙏 Amém (${o.amens || 0})</button>
+      </div>
+    `).join('');
+  }
+  
+  // Enviar novo pedido para o Firebase
+  function enviarOracaoComunitaria() {
+    const nome = document.getElementById('nomeOracao')?.value.trim();
+    const texto = document.getElementById('textoOracao')?.value.trim();
+    
+    if (!nome) {
+      showToast('Digite seu nome');
+      return;
+    }
+    if (!texto) {
+      showToast('Escreva seu pedido de oração');
+      return;
+    }
+    
+    const data = new Date().toLocaleDateString('pt-BR');
+    const timestamp = new Date();
+    
+    db.collection('oracoes').add({
+      nome: nome,
+      texto: texto,
+      amens: 0,
+      data: data,
+      timestamp: timestamp
+    }).then(() => {
+      document.getElementById('nomeOracao').value = '';
+      document.getElementById('textoOracao').value = '';
+      showToast('✝ Pedido enviado! A comunidade vai orar por você');
+    }).catch(erro => {
+      console.error(erro);
+      showToast('Erro ao enviar. Tente novamente.');
+    });
+  }
+  
+  // Dar Amém no Firebase
+  function darAmemFirebase(id, amensAtual) {
+    db.collection('oracoes').doc(id).update({
+      amens: amensAtual + 1
+    }).then(() => {
+      showToast('Amém! Você orou por este pedido 🙏');
+    }).catch(erro => {
+      console.error(erro);
+      showToast('Erro ao registrar Amém');
+    });
+  }
+  
+  function copiarPix() {
+    navigator.clipboard.writeText('comunidadegraca@igreja.org.br');
+    showToast('Chave PIX copiada!');
+  }
+  
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+  
+      function mostrarAdmin() {
+    const senha = prompt('Digite a senha do admin:');
+    if (senha === 'snh@Forte2026') {
+      // Primeiro, fazer login no Firebase
+      firebase.auth().signInWithEmailAndPassword('matsumarcoc6@gmail.com', 'snh@Forte2026')
+        .then((userCredential) => {
+          console.log("✅ Login realizado com sucesso!", userCredential.user.email);
+          // Depois de logado, carregar os dados e abrir o painel
+          abrirAdminPanel();
+        })
+        .catch((erro) => {
+          console.error("❌ Erro no login:", erro.message);
+          alert('Erro ao autenticar. Verifique se o usuário existe no Firebase.\n' + erro.message);
+        });
+    } else if (senha) {
+      alert('Senha incorreta!');
+    }
+  }
+  // Navegação
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.getAttribute('data-section');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(section).classList.add('active');
+    });
+  });
+  
+  // Splash e Admin Trigger
+  let clickCount = 0;
+  document.getElementById('adminTrigger')?.addEventListener('click', () => {
+    clickCount++;
+    if (clickCount === 7) {
+      clickCount = 0;
+      mostrarAdmin();
+    }
+    setTimeout(() => { clickCount = 0; }, 1000);
+  });
+      // Devocional Automático (muda a cada dia)
+  const devocionais = [
+    { titulo: "Salmos 23:1-2", versiculo: '"O Senhor é o meu pastor; nada me faltará. Guia-me mansamente a águas tranquilas."', reflexao: "Deus nos guia para lugares de descanso. Confie no Pastor que cuida de você hoje." },
+    { titulo: "Jeremias 29:11", versiculo: '"Porque sou eu que conheço os planos que tenho para vocês, planos de paz e não de mal, para dar-lhes um futuro e uma esperança."', reflexao: "Deus tem planos perfeitos para sua vida. Confie mesmo quando não entender." },
+    { titulo: "Filipenses 4:13", versiculo: '"Posso todas as coisas naquele que me fortalece."', reflexao: "Você não está sozinho. Com Deus, você é capaz de superar qualquer desafio." },
+    { titulo: "Romanos 8:28", versiculo: '"Sabemos que todas as coisas cooperam para o bem daqueles que amam a Deus."', reflexao: "Mesmo nas dificuldades, Deus está trabalhando para o seu bem." },
+    { titulo: "Isaías 40:31", versiculo: '"Os que esperam no Senhor renovam as suas forças."', reflexao: "Se estiver cansado, espere no Senhor. Ele renova suas forças." },
+    { titulo: "Mateus 11:28", versiculo: '"Vinde a mim, todos os que estão cansados e sobrecarregados, e eu lhes darei descanso."', reflexao: "Jesus te chama para descansar Nele. Entregue suas preocupações." },
+    { titulo: "Provérbios 3:5-6", versiculo: '"Confie no Senhor de todo o seu coração e não se apoie em seu próprio entendimento."', reflexao: "Nem sempre entendemos, mas podemos confiar. Deus sabe o que faz." }
+  ];
+  
+  const diaDoAno = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const indiceDevocional = diaDoAno % devocionais.length;
+  const devHoje = devocionais[indiceDevocional];
+  
+  document.getElementById('devTitulo').innerHTML = devHoje.titulo;
+  document.getElementById('devVersiculo').innerHTML = devHoje.versiculo;
+  document.getElementById('devReflexao').innerHTML = devHoje.reflexao;
+   // Inicialização
+  setTimeout(async () => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    
+    // Carregar todos os dados do Firebase
+    await carregarConfigIgreja();
+    console.log("Carregando configurações da igreja...");
+    await carregarCultos();
+    await carregarCelulas();
+    await carregarAvisos();
+    await carregarDevocional();
+    carregarOracoesFirebase();
+  }, 1500);
+    // ========== EDITAR CULTOS, AVISOS E CÉLULAS ==========
+  
+  // EDITAR CULTOS
+  async function carregarCultosParaEdicao() {
+    const docRef = db.collection('cultos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const cultos = JSON.parse(data.cultos);
+      
+      let html = '';
+      cultos.forEach((culto, cIndex) => {
+        html += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:5px;">`;
+        html += `<h5>Culto ${cIndex + 1}</h5>`;
+        html += `<label>Dia:</label><input type="text" id="culto_dia_${cIndex}" value="${culto.dia}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>Especial:</label><input type="text" id="culto_especial_${cIndex}" value="${culto.especial}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        
+        culto.horarios.forEach((horario, hIndex) => {
+          html += `<div style="margin-left:15px; border-left:2px solid #B8972A; padding-left:10px; margin-top:5px;">`;
+          html += `<label>Horário ${hIndex + 1}:</label><input type="text" id="culto_${cIndex}_hora_${hIndex}" value="${horario.hora}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+          html += `<label>Título:</label><input type="text" id="culto_${cIndex}_titulo_${hIndex}" value="${horario.titulo}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+          html += `<label>Preletor:</label><input type="text" id="culto_${cIndex}_preletor_${hIndex}" value="${horario.preletor}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      });
+      document.getElementById('cultosEditList').innerHTML = html;
+    }
+  }
+  
+     async function salvarCultosAdmin() {
+    console.log("Salvando cultos...");
+    const docRef = db.collection('cultos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const cultos = JSON.parse(data.cultos);
+      
+      cultos.forEach((culto, cIndex) => {
+        culto.dia = document.getElementById(`culto_dia_${cIndex}`).value;
+        culto.especial = document.getElementById(`culto_especial_${cIndex}`).value;
+        
+        culto.horarios.forEach((horario, hIndex) => {
+          horario.hora = document.getElementById(`culto_${cIndex}_hora_${hIndex}`).value;
+          horario.titulo = document.getElementById(`culto_${cIndex}_titulo_${hIndex}`).value;
+          horario.preletor = document.getElementById(`culto_${cIndex}_preletor_${hIndex}`).value;
+        });
+      });
+      
+      await db.collection('cultos').doc('lista').update({
+        cultos: JSON.stringify(cultos)
+      });
+      
+      console.log("✅ Cultos salvos no Firebase!");
+      
+      // Forçar recarregamento da página
+      alert("✅ Cultos salvos! A página vai recarregar.");
+      location.reload();
+    }
+  }
+  
+  // EDITAR AVISOS
+  async function carregarAvisosParaEdicao() {
+    const docRef = db.collection('avisos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const avisos = JSON.parse(data.avisos);
+      
+      let html = '';
+      avisos.forEach((aviso, index) => {
+        html += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:5px;">`;
+        html += `<h5>Aviso ${index + 1}</h5>`;
+        html += `<label>Título:</label><input type="text" id="aviso_titulo_${index}" value="${aviso.titulo.replace(/"/g, '&quot;')}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>Texto:</label><textarea id="aviso_texto_${index}" style="width:100%; margin-bottom:5px; padding:5px;">${aviso.texto}</textarea>`;
+        html += `<label>Data:</label><input type="text" id="aviso_data_${index}" value="${aviso.data || ''}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="aviso_urgente_${index}" ${aviso.urgente ? 'checked' : ''}> Urgente</label>`;
+        html += `<button onclick="removerAviso(${index})" style="background:#C0392B; color:white; border:none; padding:5px 10px; border-radius:4px; margin-top:5px;">🗑 Remover Aviso</button>`;
+        html += `</div>`;
+      });
+      html += `<button onclick="adicionarAviso()" style="background:#B8972A; color:#1B2B4B; border:none; padding:8px; margin-top:5px; border-radius:5px; width:100%;">+ Adicionar Novo Aviso</button>`;
+      document.getElementById('avisosEditList').innerHTML = html;
+    }
+  }
+  
+  async function salvarAvisosAdmin() {
+    const docRef = db.collection('avisos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const avisos = JSON.parse(data.avisos);
+      
+      for (let i = 0; i < avisos.length; i++) {
+        avisos[i].titulo = document.getElementById(`aviso_titulo_${i}`).value;
+        avisos[i].texto = document.getElementById(`aviso_texto_${i}`).value;
+        avisos[i].data = document.getElementById(`aviso_data_${i}`).value;
+        avisos[i].urgente = document.getElementById(`aviso_urgente_${i}`).checked;
+      }
+      
+      await db.collection('avisos').doc('lista').update({
+        avisos: JSON.stringify(avisos)
+      });
+      
+      showToast('✅ Avisos salvos! Recarregando...');
+      setTimeout(() => location.reload(), 1500);
+    }
+  }
+  
+  async function adicionarAviso() {
+    const docRef = db.collection('avisos').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const avisos = JSON.parse(data.avisos);
+      avisos.push({
+        titulo: "Novo Aviso",
+        texto: "Digite o texto do aviso aqui...",
+        urgente: false,
+        data: new Date().toLocaleDateString('pt-BR')
+      });
+      await db.collection('avisos').doc('lista').update({
+        avisos: JSON.stringify(avisos)
+      });
+      await carregarAvisosParaEdicao();
+      showToast('✅ Novo aviso adicionado!');
+    }
+  }
+  
+  async function removerAviso(index) {
+    if (confirm('Tem certeza que deseja remover este aviso?')) {
+      const docRef = db.collection('avisos').doc('lista');
+      const doc = await docRef.get();
+      if (doc.exists) {
+        const data = doc.data();
+        const avisos = JSON.parse(data.avisos);
+        avisos.splice(index, 1);
+        await db.collection('avisos').doc('lista').update({
+          avisos: JSON.stringify(avisos)
+        });
+        await carregarAvisosParaEdicao();
+        showToast('✅ Aviso removido!');
+      }
+    }
+  }
+  
+  // EDITAR CÉLULAS
+  async function carregarCelulasParaEdicao() {
+    const docRef = db.collection('celulas').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const celulas = JSON.parse(data.celulas);
+      
+      let html = '';
+      celulas.forEach((celula, index) => {
+        html += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:5px;">`;
+        html += `<h5>Célula ${index + 1}</h5>`;
+        html += `<label>Nome:</label><input type="text" id="celula_nome_${index}" value="${celula.nome}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>Líder:</label><input type="text" id="celula_lider_${index}" value="${celula.lider}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>Dia/Horário:</label><input type="text" id="celula_dia_${index}" value="${celula.dia}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>Endereço:</label><input type="text" id="celula_endereco_${index}" value="${celula.endereco}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<label>WhatsApp:</label><input type="text" id="celula_whatsapp_${index}" value="${celula.whatsapp}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+        html += `<button onclick="removerCelula(${index})" style="background:#C0392B; color:white; border:none; padding:5px 10px; border-radius:4px; margin-top:5px;">🗑 Remover Célula</button>`;
+        html += `</div>`;
+      });
+      html += `<button onclick="adicionarCelula()" style="background:#B8972A; color:#1B2B4B; border:none; padding:8px; margin-top:5px; border-radius:5px; width:100%;">+ Adicionar Nova Célula</button>`;
+      document.getElementById('celulasEditList').innerHTML = html;
+    }
+  }
+  
+   async function salvarCelulasAdmin() {
+    // Verificar se está logado
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      alert('Você não está logado. Faça login novamente.');
+      return;
+    }
+    
+    console.log("Salvando células como:", user.email);
+    const docRef = db.collection('celulas').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const celulas = JSON.parse(data.celulas);
+      
+      for (let i = 0; i < celulas.length; i++) {
+        celulas[i].nome = document.getElementById(`celula_nome_${i}`).value;
+        celulas[i].lider = document.getElementById(`celula_lider_${i}`).value;
+        celulas[i].dia = document.getElementById(`celula_dia_${i}`).value;
+        celulas[i].endereco = document.getElementById(`celula_endereco_${i}`).value;
+        celulas[i].whatsapp = document.getElementById(`celula_whatsapp_${i}`).value;
+      }
+      
+      await db.collection('celulas').doc('lista').update({
+        celulas: JSON.stringify(celulas)
+      });
+      
+      console.log("✅ Células salvas no Firebase!");
+      alert("✅ Células salvas! Recarregando...");
+      location.reload();
+    }
+  }
+  async function adicionarCelula() {
+    const docRef = db.collection('celulas').doc('lista');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const celulas = JSON.parse(data.celulas);
+      celulas.push({
+        nome: "Nova Célula",
+        lider: "Novo Líder",
+        dia: "Dia, Horário",
+        endereco: "Endereço",
+        whatsapp: "5511999999999"
+      });
+      await db.collection('celulas').doc('lista').update({
+        celulas: JSON.stringify(celulas)
+      });
+      await carregarCelulasParaEdicao();
+      showToast('✅ Nova célula adicionada!');
+    }
+  }
+  
+  async function removerCelula(index) {
+    if (confirm('Tem certeza que deseja remover esta célula?')) {
+      const docRef = db.collection('celulas').doc('lista');
+      const doc = await docRef.get();
+      if (doc.exists) {
+        const data = doc.data();
+        const celulas = JSON.parse(data.celulas);
+        celulas.splice(index, 1);
+        await db.collection('celulas').doc('lista').update({
+          celulas: JSON.stringify(celulas)
+        });
+        await carregarCelulasParaEdicao();
+        showToast('✅ Célula removida!');
+      }
+    }
+  }
+    // ========== PAINEL ADMIN ==========
+  
+  let clickCountAdmin = 0;
+  
+     async function abrirAdminPanel() {
+    // Carregar dados atuais nos campos
+    const docRef = db.collection('config_igreja').doc('dados');
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      document.getElementById('editNome').value = data.nome || '';
+      document.getElementById('editSlogan').value = data.slogan || '';
+      document.getElementById('editEndereco').value = data.endereco || '';
+      document.getElementById('editPix').value = data.pix || '';
+    }
+    await carregarCultosParaEdicao();
+    await carregarAvisosParaEdicao();
+    await carregarCelulasParaEdicao();  // ← ADICIONE ESTA LINHA
+    document.getElementById('adminPanel').style.display = 'block';
+  }
+  
+  async function salvarConfiguracoes() {
+    const novoNome = document.getElementById('editNome').value;
+    const novoSlogan = document.getElementById('editSlogan').value;
+    const novoEndereco = document.getElementById('editEndereco').value;
+    const novoPix = document.getElementById('editPix').value;
+    
+    await db.collection('config_igreja').doc('dados').set({
+      nome: novoNome,
+      slogan: novoSlogan,
+      endereco: novoEndereco,
+      pix: novoPix
+    });
+    
+    showToast('✅ Configurações salvas!');
+    fecharAdminPanel();
+    
+    // Recarregar os dados na tela
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+  }
+  
+  // Modificar o mostrarAdmin para abrir o painel
+  mostrarAdmin = function() {
+  const senha = prompt('Digite a senha do admin:');
+  if (senha === 'snh@Forte2026') {
+    firebase.auth().signInWithEmailAndPassword('matsumarcoc6@gmail.com', 'snh@Forte2026')
+      .then(() => {
+        console.log("✅ Login realizado com sucesso!");
+        abrirAdminPanel();
+      })
+      .catch((erro) => {
+        console.error("❌ Erro no login:", erro.message);
+        alert('Erro ao autenticar: ' + erro.message);
+      });
+  } else if (senha) {
+    alert('Senha incorreta!');
+  }
+};
+</script>
+<!-- PAINEL ADMIN (escondido inicialmente) -->
+<div id="adminPanel" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:10000; overflow-y:auto;">
+  <div style="background:#1B2B4B; color:white; padding:20px;">
+    <h3>✝ Painel Administrativo</h3>
+    <button onclick="fecharAdminPanel()" style="float:right; background:#B8972A; border:none; padding:5px 15px; border-radius:5px;">Fechar</button>
+    <div style="clear:both"></div>
+  </div>
+  
+  <div style="padding:20px;">
+    <div style="background:white; border-radius:10px; padding:20px; margin-bottom:20px;">
+      <h4 style="color:#1B2B4B;">🏠 Configurações da Igreja</h4>
+      <label style="display:block; margin-top:10px;">Nome da Igreja:</label>
+      <input type="text" id="editNome" style="width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc;">
+      <label style="display:block; margin-top:10px;">Slogan:</label>
+      <input type="text" id="editSlogan" style="width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc;">
+      <label style="display:block; margin-top:10px;">Endereço:</label>
+      <input type="text" id="editEndereco" style="width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc;">
+      <label style="display:block; margin-top:10px;">Chave PIX:</label>
+      <input type="text" id="editPix" style="width:100%; padding:10px; margin-top:5px; border-radius:5px; border:1px solid #ccc;">
+      <button onclick="salvarConfiguracoes()" style="background:#2D6B3A; color:white; border:none; padding:12px; margin-top:15px; border-radius:5px; width:100%; font-weight:bold;">💾 Salvar Configurações</button>
+    </div>
+  </div>
+      <div style="background:white; border-radius:10px; padding:20px; margin-bottom:20px;">
+      <h4 style="color:#1B2B4B;">⛪ Editar Cultos</h4>
+      <div id="cultosEditList"></div> 
+      <button onclick="salvarCultosAdmin()" style="background:#2D6B3A; color:white; border:none; padding:12px; margin-top:15px; border-radius:5px; width:100%; font-weight:bold;">💾 Salvar Cultos</button>
+    </div>
+
+    <div style="background:white; border-radius:10px; padding:20px; margin-bottom:20px;">
+      <h4 style="color:#1B2B4B;">📢 Editar Avisos</h4>
+      <div id="avisosEditList"></div>
+      <button onclick="salvarAvisosAdmin()" style="background:#2D6B3A; color:white; border:none; padding:12px; margin-top:15px; border-radius:5px; width:100%; font-weight:bold;">💾 Salvar Avisos</button>
+    </div>
+
+    <div style="background:white; border-radius:10px; padding:20px; margin-bottom:20px;">
+      <h4 style="color:#1B2B4B;">👥 Editar Células</h4>
+      <div id="celulasEditList"></div>
+      <button onclick="salvarCelulasAdmin()" style="background:#2D6B3A; color:white; border:none; padding:12px; margin-top:15px; border-radius:5px; width:100%; font-weight:bold;">💾 Salvar Células</button>
+    </div>
+</div>
+</body>
+</html>
