@@ -486,7 +486,7 @@
   }, 1500);
     // ========== EDITAR MISSAS, AVISOS E CÉLULAS ==========
   
-  // EDITAR CULTOS
+  // EDITAR MISSAS
   async function carregarCultosParaEdicao() {
     const docRef = db.collection('cultos').doc('lista');
     const doc = await docRef.get();
@@ -497,7 +497,7 @@
       let html = '';
       cultos.forEach((culto, cIndex) => {
         html += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:5px;">`;
-        html += `<h5>Culto ${cIndex + 1}</h5>`;
+        html += `<h5>Missa ${cIndex + 1}</h5>`;
         html += `<label>Dia:</label><input type="text" id="culto_dia_${cIndex}" value="${culto.dia}" style="width:100%; margin-bottom:5px; padding:5px;">`;
         html += `<label>Especial:</label><input type="text" id="culto_especial_${cIndex}" value="${culto.especial}" style="width:100%; margin-bottom:5px; padding:5px;">`;
         
@@ -505,7 +505,7 @@
           html += `<div style="margin-left:15px; border-left:2px solid #B8972A; padding-left:10px; margin-top:5px;">`;
           html += `<label>Horário ${hIndex + 1}:</label><input type="text" id="culto_${cIndex}_hora_${hIndex}" value="${horario.hora}" style="width:100%; margin-bottom:5px; padding:5px;">`;
           html += `<label>Título:</label><input type="text" id="culto_${cIndex}_titulo_${hIndex}" value="${horario.titulo}" style="width:100%; margin-bottom:5px; padding:5px;">`;
-          html += `<label>Preletor:</label><input type="text" id="culto_${cIndex}_preletor_${hIndex}" value="${horario.preletor}" style="width:100%; margin-bottom:5px; padding:5px;">`;
+          html += `<label>Celebrante:</label><input type="text" id="culto_${cIndex}_preletor_${hIndex}" value="${horario.preletor}" style="width:100%; margin-bottom:5px; padding:5px;">`;
           html += `</div>`;
         });
         html += `</div>`;
