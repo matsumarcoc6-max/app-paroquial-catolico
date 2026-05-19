@@ -1,7 +1,7 @@
 {
   "name": "Paróquia Nossa Senhora de Fátima",
   "short_name": "Paróquia",
-  "description": "App oficial da Paróquia Nossa Senhora de Fátima",
+  "description": "App oficial da Paróquia Nossa Senhora de Fátima - Missas, catequese e orações",
   "start_url": "/app-paroquial-catolico/",
   "display": "standalone",
   "theme_color": "#1B2B4B",
